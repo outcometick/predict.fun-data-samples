@@ -36,6 +36,9 @@ by range.
 - Every file comes with its size and SHA-256, so you can verify what you
   received; the price files carry per-tick timestamps, so feed continuity is
   auditable directly from the data
+- What the venue's feeds contain and how they are captured:
+  [Predict.fun market data](https://outcometick.com/predict-fun-data) /
+  [Predict.fun 历史数据说明](https://outcometick.com/zh/predict-fun-data)
 
 ## Samples / 样例
 
@@ -98,7 +101,8 @@ checksums are the archive's own, so a sample verifies byte for byte against a
 delivered bundle.
 
 Field-level documentation: [`DATA_GUIDE.md`](DATA_GUIDE.md) (English) /
-[`数据使用说明.md`](数据使用说明.md) (中文).
+[`数据使用说明.md`](数据使用说明.md) (中文). The same column definitions online:
+[dataset schema reference](https://outcometick.com/docs/schemas) / [字段规格](https://outcometick.com/zh/docs/schemas).
 
 ### Verify it yourself / 自行验证
 
@@ -130,6 +134,8 @@ Pushes do happen: on 2026-08-25, `btc-updown-5m-1787649300` opened and closed at
 Ties are not a rounding curiosity: across our history roughly **1 in 100
 five-minute slots** closes flat. Note this is the opposite of Polymarket, whose
 rules settle a tie to Up — a binary `>=` predicate is wrong on this venue.
+Both venues' settlement rules, side by side, are in the
+[settlement documentation](https://outcometick.com/docs/settlement).
 
 场方为每个市场发布自己的 `start_price`（strike）与 `end_price`（结算价）。对我们的
 数据而言真正要紧的是：**我们卖的这条价格流，是不是它结算时用的那条**。所以这里核对的
@@ -149,7 +155,7 @@ rules settle a tie to Up — a binary `>=` predicate is wrong on this venue.
 
 平局并非可以忽略的边角：在我们的历史数据里，5 分钟局约**每 100 局就有 1 局**收在平局。
 另请注意这与 Polymarket 相反——后者的规则把平局判给 Up，所以在本 venue 上用
-`>=` 这种二元判据是错的。
+`>=` 这种二元判据是错的。两个场子的结算规则对照见[结算口径说明](https://outcometick.com/zh/docs/settlement)。
 
 ## Data quality on the sample day / 样例当天的数据质量
 
@@ -207,17 +213,21 @@ BTC-5M 一个系列就有 478,603 条盘口快照（未限流）；盘口采集�
 ## Buy / 购买
 
 **[outcometick.com](https://outcometick.com)** — subscribe or buy a date range,
-then pull the data with your API key. Predict.fun is sold as its own venue tier,
+then pull the data with your API key through the
+[HTTP API](https://outcometick.com/docs/api). Predict.fun is sold as its own venue tier,
 or bundled with Polymarket. It is the same archive these samples come from,
 scoped to exactly the assets, data types and dates you purchase.
+Weighing it against other sources? See [what to compare when choosing
+prediction-market data](https://outcometick.com/compare).
 
 Questions, or something not working:
 **[Telegram group](https://t.me/+TcK_hJOzOz5mZTk1)** ·
 **support@outcometick.com**
 
 **[outcometick.com](https://outcometick.com)** —— 按订阅或按日期区间购买，用 API
-key 自助取数。Predict.fun 可单独作为一个场子购买，也可与 Polymarket 打包。样例即
+key 经 [HTTP API](https://outcometick.com/zh/docs/api) 自助取数。Predict.fun 可单独作为一个场子购买，也可与 Polymarket 打包。样例即
 取自同一份归档，购买后按你选择的币种、数据类型与日期范围开放。
+在和其他来源比较？见[选数据时该比什么](https://outcometick.com/zh/compare)。
 
 有疑问或遇到问题：**[Telegram 群](https://t.me/+TcK_hJOzOz5mZTk1)** ·
 **support@outcometick.com**
