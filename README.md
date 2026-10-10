@@ -12,7 +12,7 @@ by range.
 > This is a **separate venue** from Polymarket, with a different settlement
 > source. It is collected and sold independently and is never mixed into our
 > Polymarket dataset. For that one, see
-> [`polymarket-data-samples`](https://github.com/Ligengxin96/polymarket-data-samples).
+> [`polymarket-data-samples`](https://github.com/outcometick/polymarket-tick-data-samples).
 >
 > 本数据集与 Polymarket 是**不同场子、不同结算源**，独立采集、独立出售，绝不与
 > Polymarket 数据混装。
@@ -42,7 +42,7 @@ by range.
 
 ## Samples / 样例
 
-**[Download the sample bundle](https://github.com/Ligengxin96/predict.fun-data-samples/releases/latest/download/predict-fun-data-samples.tar.gz)**
+**[Download the sample bundle](https://github.com/outcometick/predict.fun-data-samples/releases/latest/download/predict-fun-data-samples.tar.gz)**
 — one real, unmodified UTC day (**2026-09-08**) of the BTC 5-minute series plus
 the settlement price feed, the full market/settlement table and one kline period.
 
@@ -66,7 +66,7 @@ The same sample day, together with the Polymarket one, is also on
 > 这是有意的：残缺的归档跑起来不报错却会给出错误结果，所以要么给完整一天，要么不给。
 
 ```bash
-curl -L https://github.com/Ligengxin96/predict.fun-data-samples/releases/latest/download/predict-fun-data-samples.tar.gz | tar xz
+curl -L https://github.com/outcometick/predict.fun-data-samples/releases/latest/download/predict-fun-data-samples.tar.gz | tar xz
 ```
 
 It unpacks to `predict-fun-data-samples/`, laid out exactly like the paid
@@ -156,6 +156,28 @@ Both venues' settlement rules, side by side, are in the
 平局并非可以忽略的边角：在我们的历史数据里，5 分钟局约**每 100 局就有 1 局**收在平局。
 另请注意这与 Polymarket 相反——后者的规则把平局判给 Up，所以在本 venue 上用
 `>=` 这种二元判据是错的。两个场子的结算规则对照见[结算口径说明](https://outcometick.com/zh/docs/settlement)。
+
+## Verify it yourself / 自行验证
+
+The `verify/` folder holds the code that produces outcometick.com's public
+settlement audit — the same files, copied verbatim. It settles every market this
+sample can settle on its own (the sample carries the BTC price file only), and
+compares each verdict with the audit published for that day. Predict.fun has no
+public outcome API to check against, so the outcome is the one its published
+start and end prices imply. Node 18+, no dependencies.
+
+`verify/` 目录里就是生成 outcometick.com 公开结算审计的代码（原样复制）。它把本样例
+能独立判定的每个市场重算一遍（样例只带 BTC 的价格文件），逐个与当天公开的审计结论比对。
+Predict.fun 没有可供核对的公开结果接口，所以官方结果按它公布的开盘价、收盘价推出。
+需要 Node 18+，无依赖。
+
+```bash
+git clone https://github.com/outcometick/predict.fun-data-samples
+curl -L https://github.com/outcometick/predict.fun-data-samples/releases/latest/download/predict-fun-data-samples.tar.gz | tar xz
+node predict.fun-data-samples/verify/verify-settlement.mjs --data ./predict-fun-data-samples
+```
+
+The published audit: https://outcometick.com/predict-fun-settlement-audit
 
 ## Data quality on the sample day / 样例当天的数据质量
 
