@@ -270,6 +270,24 @@ const STREAM_PATH = {
 };
 export const prevDay = (d) => new Date(Date.parse(`${d}T00:00:00Z`) - 86_400_000).toISOString().slice(0, 10);
 
+/** A verdict's `rule` -> the STREAM_PATH key it settles on. */
+const RULE_STREAM = { instant: 'prices', twap30: 'twap30', twap60: 'twap60' };
+
+/** Seconds in one UTC day: the denominator of the published coverage. */
+export const DAY_SECONDS = 86_400;
+
+/**
+ * Whole seconds of the UTC day starting at `d0Sec` that carry at least one
+ * archived report — audit check B's count(DISTINCT feed_ts_ms / 1000), taken
+ * from the shipped file instead of the database. `seconds`: report times in
+ * whole seconds, any order, duplicates allowed.
+ */
+export function coveredSeconds(seconds, d0Sec) {
+  const seen = new Set();
+  for (const s of seconds) if (s >= d0Sec && s < d0Sec + DAY_SECONDS) seen.add(s);
+  return seen.size;
+}
+
 /**
  * Every Polymarket market that ENDED on `day` (end_sec in [day, day+1), F's
  * definition), with its verdict.
@@ -297,6 +315,7 @@ export async function auditDay({ day, catalog, prevCatalog = null, read, skipAss
   const d0 = Date.parse(`${day}T00:00:00Z`) / 1000;
   const d1 = d0 + 86_400;
   const verdicts = [];
+  const coverage = [];
   for (const asset of [...assets].sort()) {
     const sym = streamSymbol(asset);
     const streams = {};
@@ -318,12 +337,21 @@ export async function auditDay({ day, catalog, prevCatalog = null, read, skipAss
         }
       }
     }
+    // Coverage of every stream this asset's markets of the day settle on — not
+    // of every stream archived: a retired stream's absence is not a gap.
+    const used = new Set();
     for (const mk of bySlug.values()) {
-      if (Number.isInteger(mk.end_sec) && mk.end_sec >= d0 && mk.end_sec < d1) verdicts.push(verdictForMarket(mk, streams));
+      if (!(Number.isInteger(mk.end_sec) && mk.end_sec >= d0 && mk.end_sec < d1)) continue;
+      const v = verdictForMarket(mk, streams);
+      verdicts.push(v);
+      if (RULE_STREAM[v.rule]) used.add(RULE_STREAM[v.rule]);
+    }
+    for (const name of [...used].sort()) {
+      coverage.push({ asset, stream: name, seconds: coveredSeconds(streams[name].sorted.map((ms) => Math.floor(ms / 1000)), d0) });
     }
   }
   verdicts.sort((a, b) => a.end - b.end || (a.slug < b.slug ? -1 : 1));
-  return { verdicts, inputs };
+  return { verdicts, inputs, coverage: { daySeconds: DAY_SECONDS, streams: coverage } };
 }
 
 // ------------------------------------------------------------- Predict.fun
@@ -489,10 +517,21 @@ export async function auditPredictDay({ day, catalog, prevCatalog = null, read, 
   const d0 = Date.parse(`${day}T00:00:00Z`) / 1000;
   const d1 = d0 + 86_400;
   const verdicts = [];
+  // asset|feed of every in-audit (Chainlink-priced) market that ended this day; a
+  // feed a market names but the archive lacks counts 0 seconds.
+  const used = new Map();
   for (const mk of byId.values()) {
-    if (skipAssets.has(String(mk.asset ?? '').toUpperCase())) continue;
-    if (Number.isInteger(mk.end_sec) && mk.end_sec >= d0 && mk.end_sec < d1) verdicts.push(predictVerdictForMarket(mk, streams));
+    const asset = String(mk.asset ?? '').toUpperCase();
+    if (skipAssets.has(asset)) continue;
+    if (!(Number.isInteger(mk.end_sec) && mk.end_sec >= d0 && mk.end_sec < d1)) continue;
+    verdicts.push(predictVerdictForMarket(mk, streams));
+    if (String(mk.price_feed_provider ?? '').toUpperCase() === PREDICT_FEED_PROVIDER && mk.price_feed_id != null) {
+      used.set(`${asset}|${mk.price_feed_id}`, { asset, feed: String(mk.price_feed_id) });
+    }
   }
   verdicts.sort((a, b) => a.end - b.end || (String(a.marketId) < String(b.marketId) ? -1 : 1));
-  return { verdicts, inputs };
+  const coverage = [...used.values()]
+    .sort((a, b) => (a.asset < b.asset ? -1 : a.asset > b.asset ? 1 : a.feed < b.feed ? -1 : 1))
+    .map(({ asset, feed }) => ({ asset, stream: `feed${feed}`, seconds: coveredSeconds(streams.get(feed)?.all ?? [], d0) }));
+  return { verdicts, inputs, coverage: { daySeconds: DAY_SECONDS, streams: coverage } };
 }

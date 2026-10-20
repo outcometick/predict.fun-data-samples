@@ -59,8 +59,8 @@ single upstream topic (`chainlinkAssetPriceUpdate/<feed_id>`), and the feed
 carries no per-tick source information of any kind — so there is no mixed-source
 structure in this data to correct for, no impact on volatility or any other
 statistic, and no reason to filter or group by this column. If you have split
-your data on it, merge it back. Independently verified: on the 2026-09-08 sample
-day, all 543 settlement-boundary-second ticks we hold reproduce the venue's own
+your data on it, merge it back. Independently verified: on the 2026-10-18 sample
+day, all 559 settlement-boundary-second ticks we hold reproduce the venue's own
 published `start_price`/`end_price` exactly.
 
 Limitation: our tick primary key is `(price_feed_id, publish_time, price)` and
@@ -101,8 +101,8 @@ Throttling (disclosed), which changed and matters if you span the date:
   is archived**
 
 The earlier throttle dropped a large majority of upstream snapshots, so a day
-from 2026-08-25 onward carries roughly ten times the book detail of an earlier
-one. Compare for yourself: the sample day holds 679,335 snapshots for BTC-5M
+from 2026-08-25 onward carries several times the book detail of an earlier
+one. Compare for yourself: the sample day holds 519,724 snapshots for BTC-5M
 where 2026-07-24 held 68,398.
 
 ## predict-markets-<date>.jsonl.gz — market metadata and settlement outcome
